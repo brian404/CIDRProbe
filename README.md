@@ -25,3 +25,6 @@ To use CIDRProbe, follow these steps:
 
    python cidr.py <CIDR_RANGE> [-p PORT] [-t TIMEOUT]
 
+##example
+python cidr.py 192.168.0.0/24 -p 80 -t 2
+
