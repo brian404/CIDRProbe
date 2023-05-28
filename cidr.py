@@ -2,17 +2,16 @@ import ipaddress
 import requests
 import argparse
 import socket
+from termcolor import colored
+import time
 
-# Banner
-banner = r'''
+BANNER = r"""
   ____ ___ ____  ____  ____            _          
  / ___|_ _|  _ \|  _ \|  _ \ _ __ ___ | |__   ___ 
 | |    | || | | | |_) | |_) | '__/ _ \| '_ \ / _ \
 | |___ | || |_| |  _ <|  __/| | | (_) | |_) |  __/
  \____|___|____/|_| \_\_|   |_|  \___/|_.__/ \___|
-                                                  
-CIDRProbe - Advanced CIDR Scanner
-'''
+"""
 
 def is_port_open(ip, port):
     try:
@@ -26,7 +25,7 @@ def is_port_open(ip, port):
     except socket.error:
         return False
 
-def scan_cidr(cidr, ports, timeout):
+def scan_cidr(cidr, port, timeout):
     try:
         network = ipaddress.ip_network(cidr)
     except ValueError:
@@ -35,43 +34,48 @@ def scan_cidr(cidr, ports, timeout):
 
     alive_ips = []
 
-    print(f"Scanning CIDR range: {cidr}")
+    print(BANNER)
+    print(f"\nScanning CIDR range: {cidr}\n")
 
     for ip in network.hosts():
         ip_str = str(ip)
 
         try:
-            for port in ports:
-                response = requests.get(f"http://{ip_str}:{port}", timeout=timeout)
-                if response.status_code == requests.codes.ok:
+            response = requests.get(f"http://{ip_str}", timeout=timeout)
+            if response.status_code == requests.codes.ok:
+                if port and is_port_open(ip_str, port):
                     alive_ips.append(ip_str)
-                    print(f"Alive IP: {ip_str}, Port: {port}, Response: {response.status_code}")
+                    print(colored(f"Alive IP: {ip_str}, Response: {response.status_code}", "green"))
+                else:
+                    print(colored(f"Non-alive IP: {ip_str}, Response: {response.status_code}", "red"))
+            else:
+                if port and is_port_open(ip_str, port):
+                    print(colored(f"Alive IP (HTTP error): {ip_str}, Response: {response.status_code}", "green"))
+                else:
+                    print(colored(f"Non-alive IP (HTTP error): {ip_str}, Response: {response.status_code}", "red"))
         except requests.exceptions.RequestException:
-            pass
+            if port and is_port_open(ip_str, port):
+                print(colored(f"Alive IP (Connection error): {ip_str}", "green"))
+            else:
+                print(colored(f"Non-alive IP (Connection error): {ip_str}", "red"))
+
+        time.sleep(0.1)  # Delay for better visualization
 
     if alive_ips:
         with open("alive.txt", "w") as file:
             file.write("\n".join(alive_ips))
-        print("Alive IP addresses saved to alive.txt")
+        print("\nAlive IP addresses saved to alive.txt")
     else:
-        print("No alive IP addresses found within the specified CIDR range.")
+        print("\nNo alive IP addresses found within the specified CIDR range.")
 
 def main():
-    parser = argparse.ArgumentParser(description="CIDRProbe - Advanced CIDR Scanner")
+    parser = argparse.ArgumentParser(description="Advanced CIDR Scanner")
     parser.add_argument("cidr", type=str, help="CIDR range to scan")
-    parser.add_argument("-p", "--port", nargs="+", default=[], help="Port number(s) to check (optional)")
+    parser.add_argument("-p", "--port", type=str, help="Port(s) to check")
     parser.add_argument("-t", "--timeout", type=int, default=1, help="Timeout for HTTP requests (default: 1 second)")
     args = parser.parse_args()
-
-    if not args.port:
-        print("Please provide at least one port to scan.")
-        return
 
     scan_cidr(args.cidr, args.port, args.timeout)
 
 if __name__ == "__main__":
-    # Print banner
-    print(banner)
-
-    # Execute the main function
     main()
