@@ -16,7 +16,7 @@ def is_port_open(ip, port):
     except socket.error:
         return False
 
-def scan_cidr(cidr, port, timeout):
+def scan_cidr(cidr, ports, timeout):
     try:
         network = ipaddress.ip_network(cidr)
     except ValueError:
@@ -26,12 +26,12 @@ def scan_cidr(cidr, port, timeout):
     alive_ips = []
 
     banner = '''
- _____ _           _   
-|  ___(_)_ __   __| |  
-| |_  | | '_ \ / _` |  
-|  _| | | | | | (_| |_ 
-|_|   |_|_| |_|\__,_(_)
-                        '''
+  ____ ___ ____  ____  ____            _          
+ / ___|_ _|  _ \|  _ \|  _ \ _ __ ___ | |__   ___ 
+| |    | || | | | |_) | |_) | '__/ _ \| '_ \ / _ \\
+| |___ | || |_| |  _ <|  __/| | | (_) | |_) |  __/
+ \____|___|____/|_| \_\_|   |_|  \___/|_.__/ \___|
+'''
 
     print(banner)
 
@@ -42,18 +42,16 @@ def scan_cidr(cidr, port, timeout):
         ip_str = str(ip)
         print(f"{ip_str} - ", end='')
 
-        try:
-            response = requests.get(f"http://{ip_str}", timeout=timeout)
-            if response.status_code == requests.codes.ok:
-                if port and is_port_open(ip_str, port):
+        for port in ports:
+            try:
+                response = requests.get(f"http://{ip_str}:{port}", timeout=timeout)
+                if response.status_code == requests.codes.ok:
                     alive_ips.append(ip_str)
-                    print(f"{response.status_code} OK")
-            else:
-                if port and is_port_open(ip_str, port):
-                    print(f"{response.status_code} {response.reason}")
-        except requests.exceptions.RequestException:
-            if port and is_port_open(ip_str, port):
-                print("Connection error")
+                    print(f"{port}: {response.status_code} {response.reason}")
+                else:
+                    print(f"{port}: {response.status_code} {response.reason}")
+            except requests.exceptions.RequestException:
+                print(f"{port}: Connection error")
 
         time.sleep(0.5)
 
@@ -70,11 +68,16 @@ def scan_cidr(cidr, port, timeout):
 def main():
     parser = argparse.ArgumentParser(description="Advanced CIDR Scanner")
     parser.add_argument("cidr", type=str, help="CIDR range to scan")
-    parser.add_argument("-p", "--port", type=int, help="Port number to check (optional)")
+    parser.add_argument("-p", "--port", nargs="+", default=[], help="Ports to check (optional)")
     parser.add_argument("-t", "--timeout", type=int, default=1, help="Timeout for HTTP requests (default: 1 second)")
     args = parser.parse_args()
 
-    scan_cidr(args.cidr, args.port, args.timeout)
+    if args.port and "All" in args.port:
+        ports = [80, 443]
+    else:
+        ports = args.port
+
+    scan_cidr(args.cidr, ports, args.timeout)
 
 if __name__ == "__main__":
     main()
