@@ -15,7 +15,7 @@ def scan_cidr(cidr, port):
         try:
             target = str(ip)
             nm.scan(target, arguments=f"-p {port} --open")
-            if nm[target].has_tcp(int(port)) and nm[target].tcp(int(port)).state() == 'open':
+            if nm[target].has_tcp(int(port)) and nm[target].tcp(int(port))['state'] == 'open':
                 status_text = colored("Open", "green")
             else:
                 status_text = colored("Closed", "red")
