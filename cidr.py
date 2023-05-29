@@ -12,7 +12,7 @@ def scan_cidr(cidr, port):
         
         try:
             nm.scan(ip_str, arguments=f"-p {port}")
-            if nm[ip_str].has_tcp(port) and nm[ip_str]['tcp'][port]['state'] == 'open':
+            if nm[ip_str].has_tcp(int(port)) and nm[ip_str]['tcp'][int(port)]['state'] == 'open':
                 status = colored('Open', 'green')
             else:
                 status = colored('Closed', 'blue')
@@ -59,6 +59,6 @@ if __name__ == "__main__":
  \____|___|____/|_| \_\_|   |_|  \___/|_.__/ \___|
                                                   
 https://t.me/brian_72
-contcat me via telegram for any issues 
+contact me via telegram for any issues
 ''')
     main()
