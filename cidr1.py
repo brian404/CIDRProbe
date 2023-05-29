@@ -2,6 +2,7 @@ import socket
 import requests
 import ipaddress
 from termcolor import colored
+from urllib.parse import urlparse
 
 def scan_cidr(cidr, port):
     ip_network = ipaddress.ip_network(cidr)
@@ -17,8 +18,8 @@ def scan_cidr(cidr, port):
     print(colored("https://t.me/brian_72", "white"))
     print()
 
-    print(colored("IP                Port  -Status   HTTP -Status", attrs=["bold"]))
-    print("----------------------------------------------")
+    print(colored("IP                Port  -Status   HTTP -Status   Location", attrs=["bold"]))
+    print("--------------------------------------------------------")
 
     for ip in ip_network:
         ip_str = str(ip)
@@ -30,20 +31,27 @@ def scan_cidr(cidr, port):
 
             if result == 0:
                 port_status = colored("Open", "green")
-                try:
-                    url = f"http://{ip_str}:{port}"
-                    response = requests.get(url, timeout=3)
-                    http_status = response.status_code
-                    http_status_text = colored(http_status, "blue")
-                    http_response = response.reason
-                    http_response_text = colored(http_response, "yellow")
-                    print(f"{ip_str:<17} {port:<6} {port_status:<8} {http_status_text:<10} {http_response_text}")
-                except requests.exceptions.RequestException:
-                    print(f"{ip_str:<17} {port:<6} {port_status:<8} {colored('N/A', 'blue'):<10} {colored('N/A', 'yellow')}")
-
             else:
                 port_status = colored("Closed", "red")
-                print(f"{ip_str:<17} {port:<6} {port_status:<8} {colored('N/A', 'blue'):<10} {colored('N/A', 'yellow')}")
+
+            url = f"http://{ip_str}:{port}"
+            try:
+                response = requests.get(url, timeout=3)
+                http_status = response.status_code
+                http_status_text = colored(http_status, "blue")
+                http_response = response.reason
+                http_response_text = colored(http_response, "yellow")
+                
+                if http_status == 302 and 'Location' in response.headers:
+                    redirect_url = response.headers['Location']
+                    redirect_hostname = urlparse(redirect_url).hostname
+                    location = colored(redirect_hostname, "cyan")
+                    print(f"{ip_str:<17} {port:<6} {port_status:<8} {colored('Dead', 'red'):<10} {colored('N/A', 'yellow'):<20} {location}")
+                else:
+                    print(f"{ip_str:<17} {port:<6} {port_status:<8} {http_status_text:<10} {http_response_text:<20}")
+
+            except requests.exceptions.RequestException:
+                print(f"{ip_str:<17} {port:<6} {port_status:<8} {colored('N/A', 'blue'):<10} {colored('N/A', 'yellow'):<20}")
 
         except KeyboardInterrupt:
             print(colored("\nOperation cancelled by user.", "yellow"))
