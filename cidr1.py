@@ -20,7 +20,7 @@ def scan_cidr(cidr, port):
     print(colored("IP                Port  -Status   HTTP -Status", attrs=["bold"]))
     print("----------------------------------------------")
 
-    for ip in ip_network.hosts():
+    for ip in ip_network:
         ip_str = str(ip)
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -30,18 +30,19 @@ def scan_cidr(cidr, port):
 
             if result == 0:
                 port_status = colored("Open", "green")
+                try:
+                    url = f"http://{ip_str}:{port}"
+                    response = requests.get(url, timeout=3)
+                    http_status = response.status_code
+                    http_status_text = colored(http_status, "blue")
+                    http_response = response.reason
+                    http_response_text = colored(http_response, "yellow")
+                    print(f"{ip_str:<17} {port:<6} {port_status:<8} {http_status_text:<10} {http_response_text}")
+                except requests.exceptions.RequestException:
+                    print(f"{ip_str:<17} {port:<6} {port_status:<8} {colored('N/A', 'blue'):<10} {colored('N/A', 'yellow')}")
+
             else:
                 port_status = colored("Closed", "red")
-
-            url = f"http://{ip_str}:{port}"
-            try:
-                response = requests.get(url, timeout=3)
-                http_status = response.status_code
-                http_status_text = colored(http_status, "blue")
-                http_response = response.reason
-                http_response_text = colored(http_response, "yellow")
-                print(f"{ip_str:<17} {port:<6} {port_status:<8} {http_status_text:<10} {http_response_text}")
-            except requests.exceptions.RequestException:
                 print(f"{ip_str:<17} {port:<6} {port_status:<8} {colored('N/A', 'blue'):<10} {colored('N/A', 'yellow')}")
 
         except KeyboardInterrupt:
@@ -49,7 +50,7 @@ def scan_cidr(cidr, port):
             break
 
 def main():
-    cidr = input("Enter the CIDR range (e.g., 52.84.102.0/24): ")
+    cidr = input("Enter the CIDR range: ")
     port = input("Enter the port to scan: ")
 
     scan_cidr(cidr, port)
