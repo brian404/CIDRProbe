@@ -24,11 +24,11 @@ def scan_cidr(cidr, port):
                 try:
                     response = requests.get(f"http://{ip_str}:{port}", timeout=2)
                     http_status = response.status_code
-                    http_status_text = colored(http_status, 'green') if response.ok else colored(http_status, 'red')
-                    print(f"{ip_str:<18}{port:<6}{port_status:<8}{http_status_text:<12}")
+                    http_status_text = colored(response.reason, 'yellow')
+                    print(f"{ip_str:<18}{port:<6}{port_status:<8}{http_status:<12}{http_status_text}")
 
                 except requests.exceptions.RequestException:
-                    print(f"{ip_str:<18}{port:<6}{port_status:<8}N/A")
+                    print(f"{ip_str:<18}{port:<6}{port_status:<8}N/A{'N/A':<12}")
 
             except nmap.PortScannerError:
                 print(f"{ip_str:<18}{port:<6}N/A{'N/A':<12}")
@@ -51,6 +51,6 @@ if __name__ == "__main__":
  \____|___|____/|_| \_\_|   |_|  \___/|_.__/ \___|
                                                   
 https://t.me/brian_72
-contact me via telegram for any issues 
+Use this banner and my Telegram link for contact purposes
 ''')
     main()
