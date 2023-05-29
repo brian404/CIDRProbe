@@ -1,8 +1,9 @@
 import ipaddress
-import requests
+import nmap
 from termcolor import colored
 
 def scan_cidr(cidr, port):
+    nm = nmap.PortScanner()
     ip_network = ipaddress.ip_network(cidr)
     
     print(f"\nScanning CIDR range: {cidr}")
@@ -12,13 +13,13 @@ def scan_cidr(cidr, port):
 
     for ip in ip_network.hosts():
         try:
-            url = f"http://{ip}:{port}"
-            response = requests.get(url, timeout=1)
-            status = "Open" if response.status_code == 200 else "Closed"
-            status_text = colored(status, "green" if status == "Open" else "red")
+            target = str(ip)
+            nm.scan(target, arguments=f"-p {port} --open")
+            if nm[target].has_tcp(int(port)) and nm[target].tcp(int(port)]['state'] == 'open':
+                status_text = colored("Open", "green")
+            else:
+                status_text = colored("Closed", "red")
             print(f"{ip}\t{port}\t{status_text}")
-        except requests.exceptions.RequestException:
-            print(f"{ip}\t{port}\tFailed to connect")
         except KeyboardInterrupt:
             print("\nScan interrupted by user.")
             break
