@@ -15,13 +15,13 @@ CIDR Probe - Scan CIDR Range
 '''
 
 CDN_PROVIDERS = {
-    "CloudFront": "cloudfront.net",
-    "Cloudflare": "cloudflare",
+    "cloudfront.net": "CloudFront",
+    "cloudflare": "Cloudflare",
     # Add more CDN providers here
 }
 
 def detect_cdn(url):
-    for provider, domain in CDN_PROVIDERS.items():
+    for domain, provider in CDN_PROVIDERS.items():
         if domain in url:
             return provider
     return ""
@@ -55,14 +55,14 @@ def main():
             url = f"http://{ip_address}:{port}"
             
             try:
-                response = requests.get(url, timeout=1)
+                response = requests.get(url, timeout=5)
                 
                 if response.status_code == 200:
                     status = colored("Open", "green")
                 else:
-                    status = colored("Closed", "magenta")
+                    status = colored(response.status_code, "purple")
                 
-                cdn = detect_cdn(response.url)
+                cdn = detect_cdn(url)
                 rows.append([ip_address, port, status, cdn])
             except requests.exceptions.RequestException:
                 rows.append([ip_address, port, colored("Failed to connect", "red"), ""])
