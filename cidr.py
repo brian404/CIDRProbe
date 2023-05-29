@@ -7,6 +7,9 @@ def scan_cidr(cidr, port):
     ip_network = ipaddress.ip_network(cidr)
     nm = nmap.PortScanner()
     
+    print("IP                Port   Status      HTTP Status   HTTP Response")
+    print("-------------------------------------------------------------")
+    
     for ip in ip_network.hosts():
         ip_str = str(ip)
         
@@ -21,44 +24,34 @@ def scan_cidr(cidr, port):
                 response = requests.get(f"http://{ip_str}:{port}", timeout=2)
                 if response.status_code == 200:
                     http_status = colored(response.status_code, 'green')
-                    http_message = colored('(OK)', 'yellow')
+                    http_message = colored(f'({response.reason})', 'yellow')
                 else:
                     http_status = colored(response.status_code, 'green')
                     http_message = colored(f'({response.reason})', 'yellow')
+                    
+                print(f"{ip_str:<18}{port:<6}{status:<12}{http_status:<14}{http_message}")
+                
             except requests.exceptions.RequestException:
-                http_status = colored('Error', 'red')
-                http_message = 'Connection Error'
+                print(f"{ip_str:<18}{port:<6}{status:<12}{'N/A':<14}{'N/A'}")
+                
+        except nmap.PortScannerError:
+            print(f"{ip_str:<18}{port:<6}{'N/A':<12}{'N/A':<14}{'N/A'}")
             
-            print(f"{colored(ip_str, 'white', attrs=['bold']):<15}{port:<7}{status:<13}{http_status:<10}{http_message}")
-        
-        except KeyboardInterrupt:
-            print("\nOperation cancelled by user.")
-            break
-
 def main():
     cidr = input("Enter the CIDR range: ")
-    port = input("Enter the port to scan (default is 80): ") or '80'
-
-    try:
-        ip_network = ipaddress.ip_network(cidr)
-        print(f"\nScanning CIDR range: {cidr}")
-        print(f"Port: {port}\n")
-        print("IP             Port   Status     HTTP Status     HTTP Response")
-        print("----------------------------------------------------------------")
-        scan_cidr(cidr, port)
+    port = input("Enter the port to scan: ")
     
-    except ValueError:
-        print("Invalid CIDR range input. Please enter a valid CIDR range.")
+    scan_cidr(cidr, port)
 
 if __name__ == "__main__":
     print('''
   ____ ___ ____  ____  ____            _          
  / ___|_ _|  _ \|  _ \|  _ \ _ __ ___ | |__   ___ 
-| |    | || | | | |_) | |_) | '__/ _ \| '_ \ / _ \
+| |    | || | | | |_) | |_) | '__/ _ \| '_ \ / _ \\
 | |___ | || |_| |  _ <|  __/| | | (_) | |_) |  __/
  \____|___|____/|_| \_\_|   |_|  \___/|_.__/ \___|
                                                   
 https://t.me/brian_72
-contact me via telegram for any issues
+contact me via telegram for any issues 
 ''')
     main()
