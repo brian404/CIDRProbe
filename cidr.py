@@ -29,6 +29,14 @@ def scan_cidr(cidr, port):
             break
 
 def main():
+    print("  ____ ___ ____  ____  ____            _          ")
+    print(" / ___|_ _|  _ \|  _ \|  _ \ _ __ ___ | |__   ___ ")
+    print("| |    | || | | | |_) | |_) | '__/ _ \| '_ \ / _ \\")
+    print("| |___ | || |_| |  _ <|  __/| | | (_) | |_) |  __/")
+    print(" \____|___|____/|_| \_\_|   |_|  \___/|_.__/ \___|")
+    print("\nhttps://t.me/brian_72\n")
+    print("CIDR Probe - Scan CIDR Range")
+    print("\n")
     cidr = input("Enter the CIDR range: ")
     port = input("Enter the port to scan (default is 80): ") or "80"
     scan_cidr(cidr, port)
