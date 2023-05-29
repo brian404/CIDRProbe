@@ -1,35 +1,50 @@
-# CIDRProbe
+CIDR Probe
+==========
 
-CIDRProbe is an advanced CIDR scanner tool that performs HTTP requests to IP addresses within a specified CIDR range. It helps identify alive IP addresses and detect open ports.
+CIDR Probe is a Python script that allows you to scan a CIDR range for open ports and retrieve the HTTP status codes of the corresponding services.
 
-## Installation
+Installation
+------------
 
 1. Clone the repository:
 
-```shell
+    ```
+    git clone https://github.com/brian404/CIDRProbe.git
+    ```
 
-git clone https://github.com/brian404/CIDRProbe.git
+2. Navigate to the project directory:
 
-cd CIDRProbe
-pip install -r requirements.txt
+    ```
+    cd CIDRProbe
+    ```
 
-## Usage
+3. Install the required dependencies using pip:
 
-To use CIDRProbe, follow these steps:
+    ```
+    pip install -r requirements.txt
+    ```
 
-1. Open a terminal and navigate to the CIDRProbe directory.
+Usage
+-----
 
-2. Run the CIDRProbe tool with the desired CIDR range:
+1. Run the script and provide the CIDR range and port to scan when prompted:
 
-   ```shell
+    ```
+    python cidr.py
+    ```
 
-   python cidr.py <CIDR_RANGE> [-p PORT] [-t TIMEOUT]
+2. The script will scan the specified CIDR range for open ports and retrieve the corresponding HTTP status codes.
 
-##example
-python cidr.py 192.168.0.0/24 -p 80 -t 2```
+3. The results will be displayed in the console, showing the IP address, port, status (open/closed), and HTTP status code.
 
+4. If an IP address has restrictions or is unreachable, the script will display an appropriate message.
 
+Contributing
+------------
 
+Contributions are welcome! If you encounter any issues or have suggestions for improvements, please feel free to open an issue or submit a pull request.
 
+License
+-------
 
-
+This project is licensed under the MIT License. See the `LICENSE` file for more information.
