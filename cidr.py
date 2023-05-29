@@ -1,58 +1,55 @@
-import ipaddress
-import requests
-import signal
 import sys
-from colorama import Fore, Style
+import requests
 
-# Banner
-banner = '''
+BANNER = '''
   ____ ___ ____  ____  ____            _    
  / ___|_ _|  _ \|  _ \|  _ \ _ __ ___ | |__ 
 | |    | || | | | |_) | |_) | '__/ _ \| '_ \\
 | |___ | || |_| |  _ <|  __/| | | (_) | |_) |
- \____|___|____/|_| \_\_|   |_|  \___/|_.__/ 
+ \____|___|____/|_| \_\_|   |_|  \___/|_.__/
+
+CIDR Probe - Scan CIDR Range
+
 '''
 
-# Your GitHub link
-github_link = 'https://github.com/brian404/'
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python cidr.py <CIDR> [-p <port>]")
+        print("Example: python cidr.py 10.0.0.0/24 -p 80")
+        return
 
-def scan_cidr(cidr, port):
+    cidr = sys.argv[1]
+    port = 80
+
+    if len(sys.argv) > 3 and sys.argv[2] == "-p":
+        port = int(sys.argv[3])
+
+    print(BANNER)
+    print(f"Scanning CIDR range: {cidr}")
+    print(f"Port: {port}\n")
+
     try:
-        network = ipaddress.ip_network(cidr)
-        print(f"\nScanning CIDR range: {cidr} on port {port}\n")
-
-        # Handle Ctrl+C to cancel the operation
-        def signal_handler(signal, frame):
-            print("\nOperation cancelled by user.")
-            sys.exit(0)
-
-        signal.signal(signal.SIGINT, signal_handler)
-
-        for ip in network.hosts():
-            url = f"http://{ip}:{port}"
+        ips = cidr.split('/')[0]
+        prefix = int(cidr.split('/')[1])
+        start_ip = sum([int(x) << y for x, y in zip(ips.split('.'), [24, 16, 8, 0])])
+        end_ip = start_ip + 2 ** (32 - prefix)
+        for ip in range(start_ip, end_ip):
+            ip_address = '.'.join([str(ip >> (y << 3) & 0xFF) for y in [3, 2, 1, 0]])
+            url = f"http://{ip_address}:{port}"
             try:
                 response = requests.get(url, timeout=1)
                 if response.status_code == 200:
-                    print(f"[+] {ip} - Port {port}: {Fore.GREEN}Open{Style.RESET_ALL}")
+                    print(f"[+] {ip_address} - Port {port}: Open")
+                    print(f"Status Code: {response.status_code}")
                 else:
-                    print(f"[-] {ip} - Port {port}: {Fore.MAGENTA}Closed{Style.RESET_ALL}")
-            except requests.exceptions.RequestException as e:
-                print(f"[-] {ip} - Failed to connect: {e}")
+                    print(f"[-] {ip_address} - Port {port}: Closed")
+                    print(f"Status Code: {response.status_code}")
+            except requests.exceptions.RequestException:
+                print(f"[-] {ip_address} - Failed to connect")
 
-    except ValueError as e:
-        print("Invalid CIDR range. Please provide a valid range.")
+    except KeyboardInterrupt:
+        print("\n\nScan interrupted by user.")
 
-def main():
-    print(banner)
-    print(f"GitHub: {github_link}\n")
-
-    cidr = input("Enter the CIDR range to scan (e.g., 192.168.0.0/24): ")
-    port = input("Enter the port number to scan (default is 80): ")
-
-    if not port:
-        port = 80
-
-    scan_cidr(cidr, port)
 
 if __name__ == "__main__":
     main()
