@@ -1,11 +1,12 @@
 import socket
 import requests
 import ipaddress
+from termcolor import colored
 
 def scan_cidr(cidr, port):
     ip_network = ipaddress.ip_network(cidr)
 
-    print("IP                Port  -Status   HTTP -Status")
+    print(colored("IP                Port  -Status   HTTP -Status", attrs=["bold"]))
     print("----------------------------------------------")
 
     for ip in ip_network:
@@ -17,20 +18,21 @@ def scan_cidr(cidr, port):
             sock.close()
 
             if result == 0:
-                port_status = "Open"
+                port_status = colored("Open", "green")
             else:
-                port_status = "Closed"
+                port_status = colored("Closed", "red")
 
             url = f"http://{ip_str}:{port}"
             try:
                 response = requests.get(url, timeout=3)
                 http_status = response.status_code
-                print(f"{ip_str:<17} {port:<6} {port_status:<8} {http_status:<10}")
+                http_status_text = colored(http_status, "blue")
+                print(f"{ip_str:<17} {port:<6} {port_status:<8} {http_status_text:<10}")
             except requests.exceptions.RequestException:
-                print(f"{ip_str:<17} {port:<6} {port_status:<8} {'N/A':<10}")
+                print(f"{ip_str:<17} {port:<6} {port_status:<8} {colored('N/A', 'blue'):<10}")
 
         except KeyboardInterrupt:
-            print("\nOperation cancelled by user.")
+            print(colored("\nOperation cancelled by user.", "yellow"))
             break
 
 def main():
@@ -42,8 +44,8 @@ def main():
  \____|___|____/|_| \_\_|   |_|  \___/|_.__/ \___|
                                                   
     ''')
-    print("Use this banner and my Telegram link for contact purpose")
-    print("https://t.me/brian_72")
+    print(colored("contact me via telegram for any issues ", "white"))
+    print(colored("https://t.me/brian_72", "white"))
 
     cidr = input("Enter the CIDR range: ")
     port = input("Enter the port to scan: ")
