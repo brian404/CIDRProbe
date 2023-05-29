@@ -60,7 +60,7 @@ def main():
                 if response.status_code == 200:
                     status = colored("Open", "green")
                 else:
-                    status = colored("Closed", "purple")
+                    status = colored("Closed", "magenta")
                 
                 cdn = detect_cdn(response.url)
                 rows.append([ip_address, port, status, cdn])
