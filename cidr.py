@@ -18,7 +18,7 @@ def scan_cidr(cidr, port=80):
         except requests.exceptions.RequestException:
             status_text = colored("Failed to connect", "red")
             port_text = colored(port, "red")
-        print(f"{str(ip):<15}{port_text:<7}{status_text}")
+        print(f"{str(ip):<15} {port_text:<7} {status_text}")
 
 def main():
     print("CIDR Probe - Scan CIDR Range\n")
@@ -36,7 +36,10 @@ def main():
     print(f"Port: {port}\n")
     print("IP             Port   Status      CDN")
     print("--------------------------------------")
-    scan_cidr(cidr, port)
+    try:
+        scan_cidr(cidr, port)
+    except KeyboardInterrupt:
+        print("\nScan interrupted by user.")
 
 if __name__ == "__main__":
     main()
