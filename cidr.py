@@ -25,13 +25,13 @@ def scan_cidr(cidr, port):
                     response = requests.get(f"http://{ip_str}:{port}", timeout=2)
                     http_status = response.status_code
                     http_status_text = colored(http_status, 'green') if response.ok else colored(http_status, 'red')
-                    print(f"{ip_str:<18}{port:<6}{port_status:<8}{http_status_text}")
+                    print(f"{ip_str:<18}{port:<6}{port_status:<8}{http_status_text:<12}")
                     
                 except requests.exceptions.RequestException:
                     print(f"{ip_str:<18}{port:<6}{port_status:<8}N/A")
 
             except nmap.PortScannerError:
-                print(f"{ip_str:<18}{port:<6}N/A{'N/A'}")
+                print(f"{ip_str:<18}{port:<6}N/A{'N/A':<12}")
 
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.")
