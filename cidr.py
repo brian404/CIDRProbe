@@ -15,7 +15,7 @@ def scan_cidr(cidr, port=80):
                 status_text = colored(f"{status}", "magenta")  # Use magenta as a fallback color
         except requests.exceptions.RequestException:
             status_text = colored("Failed to connect", "red")
-        print(f"{ip:<15}{port:<7}{status_text}")
+        print(f"{str(ip):<15}{port:<7}{status_text}")
 
 def main():
     print("CIDR Probe - Scan CIDR Range\n")
