@@ -22,8 +22,8 @@ def scan_cidr(cidr, dns_lookup_enabled=False):
     print(colored("https://t.me/brian_72", "white"))
     print()
 
-    print(colored("IP                Port  -Status", attrs=["bold"]))
-    print("--------------------------------")
+    print(colored("IP                Port  -Status  Hostname", attrs=["bold"]))
+    print("--------------------------------------------")
 
     for ip in ip_network.hosts():
         ip_str = str(ip)
@@ -38,7 +38,14 @@ def scan_cidr(cidr, dns_lookup_enabled=False):
             else:
                 port_status = colored("Closed", "red")
 
-            print(f"{ip_str:<17} {port_status:<8}")
+            hostname = ""
+            if dns_lookup_enabled:
+                try:
+                    hostname = socket.gethostbyaddr(ip_str)[0]
+                except socket.herror:
+                    hostname = colored("N/A", "yellow")
+
+            print(f"{ip_str:<17} {port_status:<8} {hostname}")
 
         except KeyboardInterrupt:
             print(colored("\nOperation cancelled by user.", "yellow"))
@@ -53,7 +60,7 @@ def main():
     print()
 
     cidr = input("Enter the CIDR range: ")
-    dns_lookup_enabled = input("Perform DNS lookup for each IP? (y/n): ").lower() == "y"
+    dns_lookup_enabled = input("Perform reverse DNS lookup for each IP? (y/n): ").lower() == "y"
 
     scan_cidr(cidr, dns_lookup_enabled)
 
