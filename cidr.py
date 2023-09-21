@@ -36,6 +36,16 @@ def check_ssl(ip_str, port):
     except Exception:
         return colored("N/A", "yellow")
 
+def save_results_to_file(results):
+    try:
+        file_name = input("Do you want to save the scan results to a file? (Enter file name or press Enter to skip): ")
+        if file_name:
+            with open(file_name, "w") as file:
+                file.writelines(results)
+                print(f"Scan results saved to {file_name}")
+    except Exception as e:
+        print(f"Error saving scan results: {str(e)}")
+
 def scan_cidr(cidr, port, ssl_check):
     try:
         ip_network = ipaddress.ip_network(cidr)
@@ -61,33 +71,42 @@ def scan_cidr(cidr, port, ssl_check):
         print(colored("IP                Status", "blue"), colored("Hostname", "cyan"), colored("HTTP Status", "green", attrs=["bold"]))
     print("----------------------------------------------------------------------------------------")
 
-    for ip in ip_network.hosts():
-        ip_str = str(ip)
-        try:
-            response_time = ping3.ping(ip_str)
-            if response_time is not None:
-                status = colored("Alive", "green")
-            else:
-                status = colored("Not Responding", "red")
+    results = []
 
+    try:
+        for ip in ip_network.hosts():
+            ip_str = str(ip)
             try:
-                hostname, _, _ = socket.gethostbyaddr(ip_str)
-            except socket.herror:
-                hostname = colored("N/A", "yellow")
+                response_time = ping3.ping(ip_str)
+                if response_time is not None:
+                    status = colored("Alive", "green")
+                else:
+                    status = colored("Not Responding", "red")
 
-            http_status = get_http_status(ip_str, port)
+                try:
+                    hostname, _, _ = socket.gethostbyaddr(ip_str)
+                except socket.herror:
+                    hostname = colored("N/A", "yellow")
 
-            if ssl_check:
-                tls_info = check_ssl(ip_str, port)
-                if "SSL Handshake Failed" in tls_info:
-                    tls_info = colored("SSL Not Found", "red")
-                print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(http_status, 'green', attrs=['bold'])} {colored(tls_info, 'magenta', attrs=['bold'])}")
-            else:
-                print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(http_status, 'green', attrs=['bold'])}")
+                http_status = get_http_status(ip_str, port)
 
-        except KeyboardInterrupt:
-            print(colored("\nOperation cancelled by user.", "yellow"))
-            break
+                if ssl_check:
+                    tls_info = check_ssl(ip_str, port)
+                    if "SSL Handshake Failed" in tls_info:
+                        tls_info = colored("SSL Not Found", "red")
+                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {http_status:<10} {tls_info}\n")
+                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(http_status, 'green', attrs=['bold'])} {colored(tls_info, 'magenta', attrs=['bold'])}")
+                else:
+                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {http_status:<10}\n")
+                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(http_status, 'green', attrs=['bold'])}")
+
+            except KeyboardInterrupt:
+                print(colored("\nOperation cancelled by user.", "yellow"))
+                break
+    except KeyboardInterrupt:
+        print(colored("\nOperation cancelled by user.", "yellow"))
+
+    save_results_to_file(results)
 
 def main():
     parser = argparse.ArgumentParser(description="CIDRProbe - IP Range Scanner")
