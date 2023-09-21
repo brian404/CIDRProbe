@@ -24,12 +24,10 @@ def scan_cidr(cidr):
     print(colored("IP                Status", attrs=["bold"]))
     print("--------------------------")
 
-    pinger = ping3.Ping()
-
     for ip in ip_network.hosts():
         ip_str = str(ip)
         try:
-            response_time = pinger.ping(ip_str)
+            response_time = ping3.ping(ip_str)
             if response_time is not None:
                 status = colored("Alive", "green")
             else:
