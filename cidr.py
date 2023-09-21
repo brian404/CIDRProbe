@@ -2,7 +2,23 @@ import ipaddress
 import ping3
 from termcolor import colored
 import socket
-import requests
+import subprocess
+
+def get_http_status(ip_str):
+    try:
+        cmd = ["curl", "-i", ip_str]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+        output = result.stdout
+        if "HTTP/1.1" in output:
+            status_line = output.splitlines()[0]
+            status_code = status_line.split()[1]
+            return status_code
+        else:
+            return colored("N/A", "yellow")
+    except subprocess.TimeoutExpired:
+        return colored("Timeout", "red")
+    except Exception:
+        return colored("N/A", "yellow")
 
 def scan_cidr(cidr):
     try:
@@ -40,14 +56,7 @@ def scan_cidr(cidr):
             except socket.herror:
                 hostname = colored("N/A", "yellow")
 
-            try:
-                response = requests.get(f"http://{ip_str}", timeout=5)
-                if response.status_code:
-                    http_status = f"{response.status_code} {response.reason}"
-                else:
-                    http_status = colored("N/A", "yellow")
-            except (requests.RequestException, ValueError):
-                http_status = colored("N/A", "yellow")
+            http_status = get_http_status(ip_str)
 
             print(f"{ip_str:<17} {status:<10} {hostname:<15} {http_status}")
 
