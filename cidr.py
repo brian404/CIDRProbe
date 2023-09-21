@@ -6,9 +6,9 @@ import subprocess
 import ssl
 import argparse
 
-def get_http_status(ip_str, port):
+def get_http_status(ip_str):
     try:
-        cmd = ["curl", "-i", f"{ip_str}:{port}"]
+        cmd = ["curl", "-i", ip_str]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
         output = result.stdout
         if "HTTP/1.1" in output:
@@ -22,10 +22,10 @@ def get_http_status(ip_str, port):
     except Exception:
         return colored("N/A", "yellow")
 
-def check_ssl(ip_str, port):
+def check_ssl(ip_str):
     try:
         context = ssl.create_default_context()
-        with socket.create_connection((ip_str, port), timeout=5) as sock:
+        with socket.create_connection((ip_str, 443), timeout=5) as sock:
             with context.wrap_socket(sock, server_hostname=ip_str) as ssock:
                 tls_version = ssock.version()
                 return f"Established TLS {tls_version}"
@@ -46,6 +46,18 @@ def save_results_to_file(results):
     except Exception as e:
         print(f"Error saving scan results: {str(e)}")
 
+def print_banner():
+    print(colored(r'''
+  ____ ___ ____  ____  ____            _          
+ / ___|_ _|  _ \|  _ \|  _ \ _ __ ___ | |__   ___ 
+| |    | || | | | |_) | |_) | '__/ _ \| '_ \ / _ \
+| |___ | || |_| |  _ <|  __/| | | (_) | |_) |  __/
+ \____|___|____/|_| \_\_|   |_|  \___/|_.__/ \___|
+                                                  ''', "cyan"))
+    print(colored("Contact me for any issues on Telegram:", "magenta"))
+    print(colored("https://t.me/brian_72", "magenta"))
+    print()
+
 def scan_cidr(cidr, port, ssl_check):
     try:
         ip_network = ipaddress.ip_network(cidr)
@@ -54,16 +66,7 @@ def scan_cidr(cidr, port, ssl_check):
         print(colored("Example: 192.168.0.0/24", "yellow"))
         return
 
-    print(colored(r'''
-  ____ ___ ____  ____  ____            _          
- / ___|_ _|  _ \|  _ \|  _ \ _ __ ___ | |__   ___ 
-| |    | || | | | |_) | |_) | '__/ _ \| '_ \ / _ \
-| |___ | || |_| |  _ <|  __/| | | (_) | |_) |  __/
- \____|___|____/|_| \_\_|   |_|  \___/|_.__/ \___|
-                                                  ''', "white"))
-    print(colored("Contact me via Telegram for any issues.", "green"))
-    print(colored("https://t.me/brian_72", "white"))
-    print()
+    print_banner()
 
     if ssl_check:
         print(colored("IP                Status", "blue"), colored("Hostname", "cyan"), colored("HTTP Status", "green", attrs=["bold"]), colored("SSL/TLS", "magenta", attrs=["bold"]))
@@ -88,17 +91,15 @@ def scan_cidr(cidr, port, ssl_check):
                 except socket.herror:
                     hostname = colored("N/A", "yellow")
 
-                http_status = get_http_status(ip_str, port)
-
                 if ssl_check:
-                    tls_info = check_ssl(ip_str, port)
+                    tls_info = check_ssl(ip_str)
                     if "SSL Handshake Failed" in tls_info:
                         tls_info = colored("SSL Not Found", "red")
-                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {http_status:<10} {tls_info}\n")
-                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(http_status, 'green', attrs=['bold'])} {colored(tls_info, 'magenta', attrs=['bold'])}")
+                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10} {tls_info}\n")
+                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(get_http_status(ip_str), 'green', attrs=['bold'])} {colored(tls_info, 'magenta', attrs=['bold'])}")
                 else:
-                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {http_status:<10}\n")
-                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(http_status, 'green', attrs=['bold'])}")
+                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10}\n")
+                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(get_http_status(ip_str), 'green', attrs=['bold'])}")
 
             except KeyboardInterrupt:
                 print(colored("\nOperation cancelled by user.", "yellow"))
@@ -106,16 +107,23 @@ def scan_cidr(cidr, port, ssl_check):
     except KeyboardInterrupt:
         print(colored("\nOperation cancelled by user.", "yellow"))
 
+    # After the scan is completed, ask the user if they want to save the results to a file.
     save_results_to_file(results)
 
 def main():
     parser = argparse.ArgumentParser(description="CIDRProbe - IP Range Scanner")
-    parser.add_argument("cidr", help="CIDR Range (e.g., 192.168.0.0/24)")
+    parser.add_argument("cidr", nargs="?", default="192.168.0.0/24", help="CIDR Range (e.g., 192.168.0.0/24)")
     parser.add_argument("-p", "--port", type=int, default=80, help="Port to use for HTTP checks (default: 80)")
     parser.add_argument("-ssl", action="store_true", help="Perform SSL/TLS checks")
 
     args = parser.parse_args()
-    scan_cidr(args.cidr, args.port, args.ssl)
+
+    if args.cidr:
+        scan_cidr(args.cidr, args.port, args.ssl)
+    else:
+        print_banner()
+        print("Usage: python cidr.py [OPTIONS] CIDR")
+        print("Run 'python cidr.py -h' for more information on available options.")
 
 if __name__ == "__main__":
     main()
