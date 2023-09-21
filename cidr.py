@@ -72,10 +72,13 @@ def scan_cidr(cidr, port, ssl_check, use_hackertarget, use_shodan, use_rapiddns)
     print_banner()
 
     if ssl_check:
-        print(colored("IP                Status", "blue"), colored("Hostname", "cyan"), colored("HTTP Status", "green", attrs=["bold"]), colored("SSL/TLS", "magenta", attrs=["bold"]))
+        print(colored("IP                Status Hostname HTTP Status", "blue"))
+        print(colored("Extension", "cyan"), colored("SSL/TLS", "magenta", attrs=["bold"]))
     else:
-        print(colored("IP                Status", "blue"), colored("Hostname", "cyan"), colored("HTTP Status", "green", attrs=["bold"]))
-    print("----------------------------------------------------------------------------------------")
+        print(colored("IP                Status Hostname HTTP Status", "blue"))
+        print(colored("Extension", "cyan"))
+
+    print("--------------------------------------------------------------------------------------------")
 
     results = []
 
@@ -94,31 +97,29 @@ def scan_cidr(cidr, port, ssl_check, use_hackertarget, use_shodan, use_rapiddns)
                 except socket.herror:
                     hostname = colored("N/A", "yellow")
 
+                extensions_used = []
+                
                 if use_hackertarget:
                     hostnames = hackertarget.reverse_ip_lookup(ip_str)
-                    print("Hacker Target Results:")
-                    for hostname in hostnames:
-                        print(hostname)
+                    extensions_used.append("Hacker Target")
 
                 if use_shodan:
                     shodan_results = shodan.perform_shodan_lookup(ip_str)
-                    print("Shodan Results:")
-                    print(shodan_results)
+                    extensions_used.append("Shodan")
 
                 if use_rapiddns:
                     rapiddns_results = rapiddns.perform_rapiddns_lookup(ip_str)
-                    print("Rapid DNS Results:")
-                    print(rapiddns_results)
+                    extensions_used.append("Rapid DNS")
 
                 if ssl_check:
                     tls_info = check_ssl(ip_str)
                     if "SSL Handshake Failed" in tls_info:
                         tls_info = colored("SSL Not Found", "red")
-                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10} {tls_info}\n")
-                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(get_http_status(ip_str), 'green', attrs=['bold'])} {colored(tls_info, 'magenta', attrs=['bold'])}")
+                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10} {', '.join(extensions_used)} {colored(tls_info, 'magenta', attrs=['bold'])}\n")
+                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(get_http_status(ip_str), 'green', attrs=['bold'])} {colored(', '.join(extensions_used), 'cyan')} {colored(tls_info, 'magenta', attrs=['bold'])}")
                 else:
-                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10}\n")
-                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(get_http_status(ip_str), 'green', attrs=['bold'])}")
+                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10} {', '.join(extensions_used)}\n")
+                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(get_http_status(ip_str), 'green', attrs=['bold'])} {colored(', '.join(extensions_used), 'cyan')}")
 
             except KeyboardInterrupt:
                 print(colored("\nOperation cancelled by user.", "yellow"))
