@@ -42,7 +42,10 @@ def scan_cidr(cidr):
 
             try:
                 response = requests.get(f"http://{ip_str}", timeout=5)
-                http_status = f"{response.status_code} {response.reason}"
+                if response.status_code:
+                    http_status = f"{response.status_code} {response.reason}"
+                else:
+                    http_status = colored("N/A", "yellow")
             except (requests.RequestException, ValueError):
                 http_status = colored("N/A", "yellow")
 
