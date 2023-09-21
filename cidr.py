@@ -3,10 +3,12 @@ import ping3
 from termcolor import colored
 import socket
 import subprocess
+import ssl
+import argparse
 
-def get_http_status(ip_str):
+def get_http_status(ip_str, port):
     try:
-        cmd = ["curl", "-i", ip_str]
+        cmd = ["curl", "-i", f"{ip_str}:{port}"]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
         output = result.stdout
         if "HTTP/1.1" in output:
@@ -20,7 +22,21 @@ def get_http_status(ip_str):
     except Exception:
         return colored("N/A", "yellow")
 
-def scan_cidr(cidr):
+def check_ssl(ip_str, port):
+    try:
+        context = ssl.create_default_context()
+        with socket.create_connection((ip_str, port), timeout=5) as sock:
+            with context.wrap_socket(sock, server_hostname=ip_str) as ssock:
+                tls_version = ssock.version()
+                return f"Established TLS {tls_version}"
+    except ssl.SSLError:
+        return colored("SSL Handshake Failed", "red")
+    except (socket.timeout, ConnectionRefusedError):
+        return colored("N/A", "yellow")
+    except Exception:
+        return colored("N/A", "yellow")
+
+def scan_cidr(cidr, port, ssl_check):
     try:
         ip_network = ipaddress.ip_network(cidr)
     except ValueError:
@@ -39,8 +55,11 @@ def scan_cidr(cidr):
     print(colored("https://t.me/brian_72", "white"))
     print()
 
-    print(colored("IP                Status", "blue"), colored("Hostname", "cyan"), colored("HTTP Status", "green", attrs=["bold"]))
-    print("------------------------------------------------------------")
+    if ssl_check:
+        print(colored("IP                Status", "blue"), colored("Hostname", "cyan"), colored("HTTP Status", "green", attrs=["bold"]), colored("SSL/TLS", "magenta", attrs=["bold"]))
+    else:
+        print(colored("IP                Status", "blue"), colored("Hostname", "cyan"), colored("HTTP Status", "green", attrs=["bold"]))
+    print("----------------------------------------------------------------------------------------")
 
     for ip in ip_network.hosts():
         ip_str = str(ip)
@@ -56,25 +75,28 @@ def scan_cidr(cidr):
             except socket.herror:
                 hostname = colored("N/A", "yellow")
 
-            http_status = get_http_status(ip_str)
+            http_status = get_http_status(ip_str, port)
 
-            print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(http_status, 'green', attrs=['bold'])}")
+            if ssl_check:
+                tls_info = check_ssl(ip_str, port)
+                if "SSL Handshake Failed" in tls_info:
+                    tls_info = colored("SSL Not Found", "red")
+                print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(http_status, 'green', attrs=['bold'])} {colored(tls_info, 'magenta', attrs=['bold'])}")
+            else:
+                print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(http_status, 'green', attrs=['bold'])}")
 
         except KeyboardInterrupt:
             print(colored("\nOperation cancelled by user.", "yellow"))
             break
 
 def main():
-    print("CIDRProbe - IP Range Scanner")
-    print()
+    parser = argparse.ArgumentParser(description="CIDRProbe - IP Range Scanner")
+    parser.add_argument("cidr", help="CIDR Range (e.g., 192.168.0.0/24)")
+    parser.add_argument("-p", "--port", type=int, default=80, help="Port to use for HTTP checks (default: 80)")
+    parser.add_argument("-ssl", action="store_true", help="Perform SSL/TLS checks")
 
-    print("Usage Example:")
-    print("CIDR Range: 192.168.0.0/24")
-    print()
-
-    cidr = input("Enter the CIDR range: ")
-
-    scan_cidr(cidr)
+    args = parser.parse_args()
+    scan_cidr(args.cidr, args.port, args.ssl)
 
 if __name__ == "__main__":
     main()
