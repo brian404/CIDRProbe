@@ -5,6 +5,9 @@ import socket
 import subprocess
 import ssl
 import argparse
+from extensions import hackertarget
+from extensions import shodan
+from extensions import rapiddns
 
 def get_http_status(ip_str):
     try:
@@ -58,7 +61,7 @@ def print_banner():
     print(colored("https://t.me/brian_72", "magenta"))
     print()
 
-def scan_cidr(cidr, port, ssl_check):
+def scan_cidr(cidr, port, ssl_check, use_hackertarget, use_shodan, use_rapiddns):
     try:
         ip_network = ipaddress.ip_network(cidr)
     except ValueError:
@@ -91,6 +94,22 @@ def scan_cidr(cidr, port, ssl_check):
                 except socket.herror:
                     hostname = colored("N/A", "yellow")
 
+                if use_hackertarget:
+                    hostnames = hackertarget.reverse_ip_lookup(ip_str)
+                    print("Hacker Target Results:")
+                    for hostname in hostnames:
+                        print(hostname)
+
+                if use_shodan:
+                    shodan_results = shodan.perform_shodan_lookup(ip_str)
+                    print("Shodan Results:")
+                    print(shodan_results)
+
+                if use_rapiddns:
+                    rapiddns_results = rapiddns.perform_rapiddns_lookup(ip_str)
+                    print("Rapid DNS Results:")
+                    print(rapiddns_results)
+
                 if ssl_check:
                     tls_info = check_ssl(ip_str)
                     if "SSL Handshake Failed" in tls_info:
@@ -115,13 +134,16 @@ def main():
     parser.add_argument("cidr", nargs="?", default=None, help="CIDR Range (e.g., 192.168.0.0/24)")
     parser.add_argument("-p", "--port", type=int, default=80, help="Port to use for HTTP checks (default: 80)")
     parser.add_argument("-ssl", action="store_true", help="Perform SSL/TLS checks")
+    parser.add_argument("-ht", "--hackertarget", action="store_true", help="Use Hacker Target extension")
+    parser.add_argument("-shodan", "--shodan", action="store_true", help="Use Shodan extension")
+    parser.add_argument("-rapiddns", "--rapiddns", action="store_true", help="Use Rapid DNS extension")
 
     args = parser.parse_args()
 
     if args.cidr is None:
         args.cidr = input("Enter the CIDR range (e.g., 192.168.0.0/24): ")
 
-    scan_cidr(args.cidr, args.port, args.ssl)
+    scan_cidr(args.cidr, args.port, args.ssl, args.hackertarget, args.shodan, args.rapiddns)
 
 if __name__ == "__main__":
     main()
