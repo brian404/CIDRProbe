@@ -1,6 +1,8 @@
 import ipaddress
 import ping3
 from termcolor import colored
+import socket
+import requests
 
 def scan_cidr(cidr):
     try:
@@ -21,8 +23,8 @@ def scan_cidr(cidr):
     print(colored("https://t.me/brian_72", "white"))
     print()
 
-    print(colored("IP                Status", attrs=["bold"]))
-    print("--------------------------")
+    print(colored("IP                Status      Hostname       HTTP Status", attrs=["bold"]))
+    print("------------------------------------------------------------")
 
     for ip in ip_network.hosts():
         ip_str = str(ip)
@@ -33,7 +35,18 @@ def scan_cidr(cidr):
             else:
                 status = colored("Not Responding", "red")
 
-            print(f"{ip_str:<17} {status}")
+            try:
+                hostname, _, _ = socket.gethostbyaddr(ip_str)
+            except socket.herror:
+                hostname = colored("N/A", "yellow")
+
+            try:
+                response = requests.get(f"http://{ip_str}", timeout=5)
+                http_status = f"{response.status_code} {response.reason}"
+            except (requests.RequestException, ValueError):
+                http_status = colored("N/A", "yellow")
+
+            print(f"{ip_str:<17} {status:<10} {hostname:<15} {http_status}")
 
         except KeyboardInterrupt:
             print(colored("\nOperation cancelled by user.", "yellow"))
