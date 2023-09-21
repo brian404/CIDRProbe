@@ -39,7 +39,7 @@ def scan_cidr(cidr):
     print(colored("https://t.me/brian_72", "white"))
     print()
 
-    print(colored("IP                Status      Hostname       HTTP Status", attrs=["bold"]))
+    print(colored("IP                Status", "blue"), colored("Hostname", "white"), colored("HTTP Status", "green", attrs=["bold"]))
     print("------------------------------------------------------------")
 
     for ip in ip_network.hosts():
@@ -58,7 +58,7 @@ def scan_cidr(cidr):
 
             http_status = get_http_status(ip_str)
 
-            print(f"{ip_str:<17} {status:<10} {hostname:<15} {http_status}")
+            print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'white'):<15} {colored(http_status, 'green', attrs=['bold'])}")
 
         except KeyboardInterrupt:
             print(colored("\nOperation cancelled by user.", "yellow"))
