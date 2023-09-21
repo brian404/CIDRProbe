@@ -107,23 +107,21 @@ def scan_cidr(cidr, port, ssl_check):
     except KeyboardInterrupt:
         print(colored("\nOperation cancelled by user.", "yellow"))
 
-    # After the scan is completed, ask the user if they want to save the results to a file.
+    # prompt user to save scan results
     save_results_to_file(results)
 
 def main():
     parser = argparse.ArgumentParser(description="CIDRProbe - IP Range Scanner")
-    parser.add_argument("cidr", nargs="?", default="192.168.0.0/24", help="CIDR Range (e.g., 192.168.0.0/24)")
+    parser.add_argument("cidr", nargs="?", default=None, help="CIDR Range (e.g., 192.168.0.0/24)")
     parser.add_argument("-p", "--port", type=int, default=80, help="Port to use for HTTP checks (default: 80)")
     parser.add_argument("-ssl", action="store_true", help="Perform SSL/TLS checks")
 
     args = parser.parse_args()
 
-    if args.cidr:
-        scan_cidr(args.cidr, args.port, args.ssl)
-    else:
-        print_banner()
-        print("Usage: python cidr.py [OPTIONS] CIDR")
-        print("Run 'python cidr.py -h' for more information on available options.")
+    if args.cidr is None:
+        args.cidr = input("Enter the CIDR range (e.g., 192.168.0.0/24): ")
+
+    scan_cidr(args.cidr, args.port, args.ssl)
 
 if __name__ == "__main__":
     main()
