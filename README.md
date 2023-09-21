@@ -1,35 +1,34 @@
-CIDR Probe
-==========
+# CIDR Probe
 
 CIDR Probe is a Python script that allows you to scan a CIDR range for open ports and retrieve the HTTP status codes of the corresponding services.
 
-Installation
-------------
+## Installation
 
 1. Clone the repository:
 
-    ```
+    ```bash
     git clone https://github.com/brian404/CIDRProbe.git
     ```
 
 2. Navigate to the project directory:
 
-    ```
+    ```bash
     cd CIDRProbe
     ```
 
 3. Install the required dependencies using pip:
 
-    ```
+    ```bash
     pip install -r requirements.txt
     ```
 
-Usage
------
+## Usage
+
+To use CIDR Probe, follow these steps:
 
 1. Run the script and provide the CIDR range and port to scan when prompted:
 
-    ```
+    ```bash
     python cidr.py
     ```
 
@@ -39,15 +38,36 @@ Usage
 
 4. If an IP address has restrictions or is unreachable, the script will display an appropriate message.
 
-Contributing
-------------
+### Advanced Usage
+
+You can also customize your scans using the following options:
+
+- Specify a different port to scan (default is 80):
+
+    ```bash
+    python cidr.py -p 8080
+    ```
+
+- Perform SSL/TLS checks (default is off):
+
+    ```bash
+    python cidr.py -ssl
+    ```
+
+- Save the scan results to a file:
+
+    ```bash
+    python cidr.py > scan_results.txt
+    ```
+
+## Contributing
 
 Contributions are welcome! If you encounter any issues or have suggestions for improvements, please feel free to open an issue or submit a pull request.
 
-License
--------
+## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for more information.
 
+---
 
-#CIDRscanner, #networking, #security, #Python #cidr
+#CIDRscanner #networking #security #Python #cidr
