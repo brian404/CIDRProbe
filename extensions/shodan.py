@@ -1,6 +1,6 @@
 import requests
 
-SERVER_ENDPOINT = "http://endpoint.brian72.eu.org:5000/get_api_key"
+SERVER_ENDPOINT = "http://endpoint.brian72.eu.org:5000"
 
 def get_shodan_api_key():
     try:
@@ -9,7 +9,7 @@ def get_shodan_api_key():
             data = response.json()
             return data.get("api_key")
         else:
-            print("Failed to fetch Shodan API key.")
+            print(f"Failed to fetch Shodan API key. Status Code: {response.status_code}")
             return None
     except Exception as e:
         print(f"Error: {str(e)}")
