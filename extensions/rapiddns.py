@@ -1,42 +1,32 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import requests
+import bs4
 
-def reverse_ip_lookup_selenium(ip_address):
+def reverse_ip_lookup(ip_address):
+    # rapiddns -> TABLE -> scraping 'td'
     url = f"https://rapiddns.io/sameip/{ip_address}#result"
 
     try:
-        # Set up the WebDriver (download the appropriate WebDriver for your browser)
-        driver = webdriver.Chrome()  # Example for Chrome; adjust as needed
+        resp = requests.get(url, timeout=5).text
+        soup = bs4.BeautifulSoup(resp, "html.parser")
 
-        # Open the URL
-        driver.get(url)
+        result = []
+        for item in soup.find_all("td"):
+            subdomain = item.text
+            if subdomain.endswith(ip_address):
+                result.append(subdomain)
 
-        # Wait for the data to load (adjust the timeout as needed)
-        wait = WebDriverWait(driver, 10)
-        wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'ellipsis')))
-
-        # Extract the domain names
-        domain_elements = driver.find_elements(By.CLASS_NAME, 'ellipsis')
-        domains = [element.text for element in domain_elements]
-
-        return domains
+        return result
 
     except Exception as e:
         print(f"Error: {str(e)}")
         return None
 
-    finally:
-        # Close the WebDriver when done
-        driver.quit()
-
 if __name__ == "__main__":
     ip_address = input("Enter the IP address for reverse lookup: ")
 
-    result = reverse_ip_lookup_selenium(ip_address)
+    result = reverse_ip_lookup(ip_address)
     if result:
-        for domain in result:
-            print(domain)
+        for subdomain in result:
+            print(subdomain)
     else:
         print("Reverse lookup failed.")
