@@ -61,7 +61,7 @@ def scan_cidr(cidr, port, ssl_check):
 | |___ | || |_| |  _ <|  __/| | | (_) | |_) |  __/
  \____|___|____/|_| \_\_|   |_|  \___/|_.__/ \___|
                                                   ''', "white"))
-    print(colored("Contact me via Telegram for any issues.", "white"))
+    print(colored("Contact me via Telegram for any issues.", "green"))
     print(colored("https://t.me/brian_72", "white"))
     print()
 
