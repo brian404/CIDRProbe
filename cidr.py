@@ -1,9 +1,8 @@
-import socket
-import requests
 import ipaddress
+import ping3
 from termcolor import colored
 
-def scan_cidr(cidr, dns_lookup_enabled=False):
+def scan_cidr(cidr):
     try:
         ip_network = ipaddress.ip_network(cidr)
     except ValueError:
@@ -22,30 +21,21 @@ def scan_cidr(cidr, dns_lookup_enabled=False):
     print(colored("https://t.me/brian_72", "white"))
     print()
 
-    print(colored("IP                Port  -Status  Hostname", attrs=["bold"]))
-    print("--------------------------------------------")
+    print(colored("IP                Status", attrs=["bold"]))
+    print("--------------------------")
+
+    pinger = ping3.Ping()
 
     for ip in ip_network.hosts():
         ip_str = str(ip)
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2)
-            result = sock.connect_ex((ip_str, 80))
-            sock.close()
-
-            if result == 0:
-                port_status = colored("Open", "green")
+            response_time = pinger.ping(ip_str)
+            if response_time is not None:
+                status = colored("Alive", "green")
             else:
-                port_status = colored("Closed", "red")
+                status = colored("Not Responding", "red")
 
-            hostname = ""
-            if dns_lookup_enabled:
-                try:
-                    hostname = socket.gethostbyaddr(ip_str)[0]
-                except socket.herror:
-                    hostname = colored("N/A", "yellow")
-
-            print(f"{ip_str:<17} {port_status:<8} {hostname}")
+            print(f"{ip_str:<17} {status}")
 
         except KeyboardInterrupt:
             print(colored("\nOperation cancelled by user.", "yellow"))
@@ -60,9 +50,8 @@ def main():
     print()
 
     cidr = input("Enter the CIDR range: ")
-    dns_lookup_enabled = input("Perform reverse DNS lookup for each IP? (y/n): ").lower() == "y"
 
-    scan_cidr(cidr, dns_lookup_enabled)
+    scan_cidr(cidr)
 
 if __name__ == "__main__":
     main()
