@@ -5,7 +5,6 @@ import socket
 import subprocess
 import ssl
 import argparse
-from extensions import hackertarget  # Import the hacker target extension
 
 def get_http_status(ip_str):
     try:
@@ -23,10 +22,10 @@ def get_http_status(ip_str):
     except Exception:
         return colored("N/A", "yellow")
 
-def check_ssl(ip_str):
+def check_ssl(ip_str, port=443):
     try:
         context = ssl.create_default_context()
-        with socket.create_connection((ip_str, 443), timeout=5) as sock:
+        with socket.create_connection((ip_str, port), timeout=5) as sock:
             with context.wrap_socket(sock, server_hostname=ip_str) as ssock:
                 tls_version = ssock.version()
                 return f"Established TLS {tls_version}"
@@ -59,7 +58,7 @@ def print_banner():
     print(colored("https://t.me/brian_72", "magenta"))
     print()
 
-def scan_cidr(cidr, port, ssl_check, use_hackertarget, use_shodan, use_rapiddns):
+def scan_cidr(cidr, port, ssl_check):
     try:
         ip_network = ipaddress.ip_network(cidr)
     except ValueError:
@@ -92,17 +91,8 @@ def scan_cidr(cidr, port, ssl_check, use_hackertarget, use_shodan, use_rapiddns)
                 except socket.herror:
                     hostname = colored("N/A", "yellow")
 
-                if use_hackertarget:
-                    hostnames = hackertarget.reverse_ip_lookup(ip_str)
-                    print("Hacker Target Results:")
-                    for hostname in hostnames:
-                        print(hostname)
-
-                # Rest of your code...
-                # Include handling for Shodan and Rapid DNS extensions as needed
-
                 if ssl_check:
-                    tls_info = check_ssl(ip_str)
+                    tls_info = check_ssl(ip_str)  # This will use port 443 by default
                     if "SSL Handshake Failed" in tls_info:
                         tls_info = colored("SSL Not Found", "red")
                     results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10} {tls_info}\n")
@@ -125,15 +115,13 @@ def main():
     parser.add_argument("cidr", nargs="?", default=None, help="CIDR Range (e.g., 192.168.0.0/24)")
     parser.add_argument("-p", "--port", type=int, default=80, help="Port to use for HTTP checks (default: 80)")
     parser.add_argument("-ssl", action="store_true", help="Perform SSL/TLS checks")
-    parser.add_argument("-ht", "--hackertarget", action="store_true", help="Use Hacker Target extension")
-    # Add similar arguments for Shodan and Rapid DNS extensions if needed
 
     args = parser.parse_args()
 
     if args.cidr is None:
         args.cidr = input("Enter the CIDR range (e.g., 192.168.0.0/24): ")
 
-    scan_cidr(args.cidr, args.port, args.ssl, args.hackertarget, use_shodan=False, use_rapiddns=False)  # Set use_shodan and use_rapiddns to False
+    scan_cidr(args.cidr, args.port, args.ssl)
 
 if __name__ == "__main__":
     main()
