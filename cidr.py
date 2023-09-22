@@ -5,6 +5,8 @@ import socket
 import subprocess
 import ssl
 import argparse
+import requests
+from extensions import hackertarget  # Import Hacker Target functionality
 
 def get_http_status(ip_str):
     try:
@@ -24,21 +26,15 @@ def get_http_status(ip_str):
 
 def check_ssl(ip_str):
     try:
-        cmd = ["sslscan", ip_str]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-        output = result.stdout
-
-        #SSL/TLS Protocols
-        protocols_start = output.find("SSL/TLS Protocols:")
-        protocols_end = output.find("\n\n", protocols_start)
-        protocols_section = output[protocols_start:protocols_end]
-
-        # Extract enabled protocols
-        enabled_protocols = [line.strip() for line in protocols_section.split("\n")[1:] if "enabled" in line]
-
-        return f"Established TLS {', '.join(enabled_protocols)}" if enabled_protocols else colored("SSL Not Found", "red")
-    except subprocess.TimeoutExpired:
-        return colored("Timeout", "red")
+        context = ssl.create_default_context()
+        with socket.create_connection((ip_str, 443), timeout=5) as sock:
+            with context.wrap_socket(sock, server_hostname=ip_str) as ssock:
+                tls_version = ssock.version()
+                return f"Established TLS {tls_version}"
+    except ssl.SSLError:
+        return colored("SSL Handshake Failed", "red")
+    except (socket.timeout, ConnectionRefusedError):
+        return colored("N/A", "yellow")
     except Exception:
         return colored("N/A", "yellow")
 
@@ -64,7 +60,7 @@ def print_banner():
     print(colored("https://t.me/brian_72", "magenta"))
     print()
 
-def scan_cidr(cidr, port, ssl_check):
+def scan_cidr(cidr, port, ssl_check, use_hackertarget):
     try:
         ip_network = ipaddress.ip_network(cidr)
     except ValueError:
@@ -105,13 +101,18 @@ def scan_cidr(cidr, port, ssl_check):
                     results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10}\n")
                     print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(get_http_status(ip_str), 'green', attrs=['bold'])}")
 
+                if use_hackertarget:
+                    hostnames = hackertarget.reverse_ip_lookup(ip_str)
+                    print("Hacker Target Results:")
+                    for hostname in hostnames:
+                        print(hostname)
+
             except KeyboardInterrupt:
                 print(colored("\nOperation cancelled by user.", "yellow"))
                 break
     except KeyboardInterrupt:
         print(colored("\nOperation cancelled by user.", "yellow"))
 
-    # save results
     save_results_to_file(results)
 
 def main():
@@ -119,13 +120,14 @@ def main():
     parser.add_argument("cidr", nargs="?", default=None, help="CIDR Range (e.g., 192.168.0.0/24)")
     parser.add_argument("-p", "--port", type=int, default=80, help="Port to use for HTTP checks (default: 80)")
     parser.add_argument("-ssl", action="store_true", help="Perform SSL/TLS checks")
+    parser.add_argument("-ht", "--hackertarget", action="store_true", help="Use Hacker Target extension")
 
     args = parser.parse_args()
 
     if args.cidr is None:
         args.cidr = input("Enter the CIDR range (e.g., 192.168.0.0/24): ")
 
-    scan_cidr(args.cidr, args.port, args.ssl)
+    scan_cidr(args.cidr, args.port, args.ssl, args.hackertarget)
 
 if __name__ == "__main__":
     main()
