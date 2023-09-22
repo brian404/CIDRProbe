@@ -22,17 +22,23 @@ def get_http_status(ip_str):
     except Exception:
         return colored("N/A", "yellow")
 
-def check_ssl(ip_str, port=443):
+def check_ssl(ip_str):
     try:
-        context = ssl.create_default_context()
-        with socket.create_connection((ip_str, port), timeout=5) as sock:
-            with context.wrap_socket(sock, server_hostname=ip_str) as ssock:
-                tls_version = ssock.version()
-                return f"Established TLS {tls_version}"
-    except ssl.SSLError:
-        return colored("SSL Handshake Failed", "red")
-    except (socket.timeout, ConnectionRefusedError):
-        return colored("N/A", "yellow")
+        cmd = ["sslscan", ip_str]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        output = result.stdout
+
+        #SSL/TLS Protocols
+        protocols_start = output.find("SSL/TLS Protocols:")
+        protocols_end = output.find("\n\n", protocols_start)
+        protocols_section = output[protocols_start:protocols_end]
+
+        # Extract enabled protocols
+        enabled_protocols = [line.strip() for line in protocols_section.split("\n")[1:] if "enabled" in line]
+
+        return f"Established TLS {', '.join(enabled_protocols)}" if enabled_protocols else colored("SSL Not Found", "red")
+    except subprocess.TimeoutExpired:
+        return colored("Timeout", "red")
     except Exception:
         return colored("N/A", "yellow")
 
@@ -92,9 +98,7 @@ def scan_cidr(cidr, port, ssl_check):
                     hostname = colored("N/A", "yellow")
 
                 if ssl_check:
-                    tls_info = check_ssl(ip_str)  # This will use port 443 by default
-                    if "SSL Handshake Failed" in tls_info:
-                        tls_info = colored("SSL Not Found", "red")
+                    tls_info = check_ssl(ip_str)
                     results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10} {tls_info}\n")
                     print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(get_http_status(ip_str), 'green', attrs=['bold'])} {colored(tls_info, 'magenta', attrs=['bold'])}")
                 else:
@@ -107,7 +111,7 @@ def scan_cidr(cidr, port, ssl_check):
     except KeyboardInterrupt:
         print(colored("\nOperation cancelled by user.", "yellow"))
 
-    # prompt user to save scan results
+    # save results
     save_results_to_file(results)
 
 def main():
