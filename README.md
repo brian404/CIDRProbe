@@ -59,6 +59,12 @@ You can also customize your scans using the following options:
     ```bash
     python cidr.py > scan_results.txt
     ```
+    - Reverse lookup CIDR/ip address using hacker target 
+
+    ```bash
+    python cidr.py -ht
+    ```
+    
 
 ## Contributing
 
