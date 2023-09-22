@@ -5,9 +5,6 @@ import socket
 import subprocess
 import ssl
 import argparse
-from extensions import hackertarget
-from extensions import shodan
-from extensions import rapiddns
 
 def get_http_status(ip_str):
     try:
