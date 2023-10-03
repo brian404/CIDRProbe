@@ -6,8 +6,8 @@ import subprocess
 import ssl
 import argparse
 import requests
-from extensions import hackertarget  # Import Hacker Target functionality
-from extensions import securitytrails  # Import Security Trails functionality
+from extensions import hackertarget
+from extensions import securitytrails
 
 def get_http_status(ip_str):
     try:
@@ -109,7 +109,7 @@ def scan_cidr(cidr, port, ssl_check, use_hackertarget, use_securitytrails):
                         print(hostname)
 
                 if use_securitytrails:
-                    st_api_key = securitytrails.load_api_key()
+                    st_api_key = securitytrails.get_api_key()
                     if st_api_key:
                         st_results = securitytrails.perform_securitytrails_lookup(ip_str, st_api_key)
                         print("Security Trails Results:")
