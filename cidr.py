@@ -7,6 +7,7 @@ import ssl
 import argparse
 import requests
 from extensions import hackertarget  # Import Hacker Target functionality
+from extensions import securitytrails  # Import Security Trails functionality
 
 def get_http_status(ip_str):
     try:
@@ -60,7 +61,7 @@ def print_banner():
     print(colored("https://t.me/brian_72", "magenta"))
     print()
 
-def scan_cidr(cidr, port, ssl_check, use_hackertarget):
+def scan_cidr(cidr, port, ssl_check, use_hackertarget, use_securitytrails):
     try:
         ip_network = ipaddress.ip_network(cidr)
     except ValueError:
@@ -107,6 +108,13 @@ def scan_cidr(cidr, port, ssl_check, use_hackertarget):
                     for hostname in hostnames:
                         print(hostname)
 
+                if use_securitytrails:
+                    st_api_key = securitytrails.load_api_key()
+                    if st_api_key:
+                        st_results = securitytrails.perform_securitytrails_lookup(ip_str, st_api_key)
+                        print("Security Trails Results:")
+                        print(st_results)
+
             except KeyboardInterrupt:
                 print(colored("\nOperation cancelled by user.", "yellow"))
                 break
@@ -121,13 +129,14 @@ def main():
     parser.add_argument("-p", "--port", type=int, default=80, help="Port to use for HTTP checks (default: 80)")
     parser.add_argument("-ssl", action="store_true", help="Perform SSL/TLS checks")
     parser.add_argument("-ht", "--hackertarget", action="store_true", help="Use Hacker Target extension")
+    parser.add_argument("-st", "--securitytrails", action="store_true", help="Use Security Trails extension")
 
     args = parser.parse_args()
 
     if args.cidr is None:
         args.cidr = input("Enter the CIDR range (e.g., 192.168.0.0/24): ")
 
-    scan_cidr(args.cidr, args.port, args.ssl, args.hackertarget)
+    scan_cidr(args.cidr, args.port, args.ssl, args.hackertarget, args.securitytrails)
 
 if __name__ == "__main__":
     main()
