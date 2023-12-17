@@ -8,7 +8,7 @@ import argparse
 import requests
 from extensions import hackertarget
 from extensions import securitytrails
-import concurrent.futures  # Added this import for threading
+import concurrent.futures  # threading to fix slow scanning
 
 def get_http_status(ip_str):
     try:
@@ -101,7 +101,6 @@ def scan_cidr_parallel(cidr, port, ssl_check, use_hackertarget, use_securitytrai
     results = []
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit tasks for each IP in the network
         futures = {executor.submit(check_http_and_ssl, str(ip), port, ssl_check): ip for ip in ip_network.hosts()}
 
         for future in concurrent.futures.as_completed(futures):
