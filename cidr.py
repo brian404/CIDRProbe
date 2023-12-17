@@ -8,7 +8,7 @@ import argparse
 import requests
 from extensions import hackertarget
 from extensions import securitytrails
-import concurrent.futures  # threading feature
+import concurrent.futures  # Added this import for threading
 
 def get_http_status(ip_str):
     try:
@@ -64,30 +64,23 @@ def print_banner():
 
 def check_http_and_ssl(ip_str, port, ssl_check):
     try:
-        status = "Alive" if ping3.ping(ip_str) is not None else "Not Responding"
+        status = "Alive" if ping3.ping(ip_str) is not None else colored("Not Responding", "red")
 
         try:
             hostname, _, _ = socket.gethostbyaddr(ip_str)
         except socket.herror:
-            hostname = "N/A"
+            hostname = colored("N/A", "yellow")
 
-        http_status = "N/A"
-        tls_info = "N/A"
+        http_status = colored(get_http_status(ip_str), "green", attrs=["bold"])
+        tls_info = colored(check_ssl(ip_str), "magenta", attrs=["bold"]) if ssl_check else colored("N/A", "yellow")
 
-        if ssl_check:
-            try:
-                http_status = get_http_status(ip_str)
-                tls_info = check_ssl(ip_str)
-            except Exception as e:
-                print(f"Error checking SSL for {ip_str}: {str(e)}")
-
-        return f"{ip_str:<17} {status:<10} {hostname:<15} {http_status:<10} {tls_info}\n"
+        return f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {http_status:<10} {tls_info}\n"
 
     except concurrent.futures.TimeoutError:
-        return f"{ip_str:<17} {colored('Timeout', 'red')}\n"
+        return f"{colored(ip_str, 'blue'):<17} {colored('Timeout', 'red')}\n"
 
     except Exception as e:
-        return f"{ip_str:<17} {colored('Error', 'red')}: {str(e)}\n"
+        return f"{colored(ip_str, 'blue'):<17} {colored('Error', 'red')}: {str(e)}\n"
 
 def scan_cidr_parallel(cidr, port, ssl_check, use_hackertarget, use_securitytrails):
     try:
