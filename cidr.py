@@ -8,6 +8,7 @@ import argparse
 import requests
 from extensions import hackertarget
 from extensions import securitytrails
+import concurrent.futures  # threading feature
 
 def get_http_status(ip_str):
     try:
@@ -61,7 +62,34 @@ def print_banner():
     print(colored("https://t.me/brian_72", "magenta"))
     print()
 
-def scan_cidr(cidr, port, ssl_check, use_hackertarget, use_securitytrails):
+def check_http_and_ssl(ip_str, port, ssl_check):
+    try:
+        status = "Alive" if ping3.ping(ip_str) is not None else "Not Responding"
+
+        try:
+            hostname, _, _ = socket.gethostbyaddr(ip_str)
+        except socket.herror:
+            hostname = "N/A"
+
+        http_status = "N/A"
+        tls_info = "N/A"
+
+        if ssl_check:
+            try:
+                http_status = get_http_status(ip_str)
+                tls_info = check_ssl(ip_str)
+            except Exception as e:
+                print(f"Error checking SSL for {ip_str}: {str(e)}")
+
+        return f"{ip_str:<17} {status:<10} {hostname:<15} {http_status:<10} {tls_info}\n"
+
+    except concurrent.futures.TimeoutError:
+        return f"{ip_str:<17} {colored('Timeout', 'red')}\n"
+
+    except Exception as e:
+        return f"{ip_str:<17} {colored('Error', 'red')}: {str(e)}\n"
+
+def scan_cidr_parallel(cidr, port, ssl_check, use_hackertarget, use_securitytrails):
     try:
         ip_network = ipaddress.ip_network(cidr)
     except ValueError:
@@ -79,47 +107,18 @@ def scan_cidr(cidr, port, ssl_check, use_hackertarget, use_securitytrails):
 
     results = []
 
-    try:
-        for ip in ip_network.hosts():
-            ip_str = str(ip)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit tasks for each IP in the network
+        futures = {executor.submit(check_http_and_ssl, str(ip), port, ssl_check): ip for ip in ip_network.hosts()}
+
+        for future in concurrent.futures.as_completed(futures):
             try:
-                response_time = ping3.ping(ip_str)
-                if response_time is not None:
-                    status = colored("Alive", "green")
-                else:
-                    status = colored("Not Responding", "red")
-
-                try:
-                    hostname, _, _ = socket.gethostbyaddr(ip_str)
-                except socket.herror:
-                    hostname = colored("N/A", "yellow")
-
-                if ssl_check:
-                    tls_info = check_ssl(ip_str)
-                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10} {tls_info}\n")
-                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(get_http_status(ip_str), 'green', attrs=['bold'])} {colored(tls_info, 'magenta', attrs=['bold'])}")
-                else:
-                    results.append(f"{ip_str:<17} {status:<10} {hostname:<15} {get_http_status(ip_str):<10}\n")
-                    print(f"{colored(ip_str, 'blue'):<17} {status:<10} {colored(hostname, 'cyan'):<15} {colored(get_http_status(ip_str), 'green', attrs=['bold'])}")
-
-                if use_hackertarget:
-                    hostnames = hackertarget.reverse_ip_lookup(ip_str)
-                    print("Hacker Target Results:")
-                    for hostname in hostnames:
-                        print(hostname)
-
-                if use_securitytrails:
-                    st_api_key = securitytrails.get_api_key()
-                    if st_api_key:
-                        st_results = securitytrails.perform_securitytrails_lookup(ip_str, st_api_key)
-                        print("Security Trails Results:")
-                        print(st_results)
-
-            except KeyboardInterrupt:
-                print(colored("\nOperation cancelled by user.", "yellow"))
-                break
-    except KeyboardInterrupt:
-        print(colored("\nOperation cancelled by user.", "yellow"))
+                result = future.result()
+                results.append(result)
+                # Print or process the result as needed
+                print(result)
+            except Exception as e:
+                print(f"Error processing result: {str(e)}")
 
     save_results_to_file(results)
 
@@ -136,7 +135,7 @@ def main():
     if args.cidr is None:
         args.cidr = input("Enter the CIDR range (e.g., 192.168.0.0/24): ")
 
-    scan_cidr(args.cidr, args.port, args.ssl, args.hackertarget, args.securitytrails)
+    scan_cidr_parallel(args.cidr, args.port, args.ssl, args.hackertarget, args.securitytrails)
 
 if __name__ == "__main__":
     main()
