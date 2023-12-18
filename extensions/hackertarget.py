@@ -1,4 +1,3 @@
-import argparse
 import requests
 
 def reverse_ip_lookup(ip_address):
@@ -10,20 +9,11 @@ def reverse_ip_lookup(ip_address):
             hostnames = response.text.splitlines()
             return hostnames
         else:
-            return ["Hacker Target lookup failed"]
+            return [f"Hacker Target lookup failed with status code {response.status_code}"]
+
     except Exception as e:
         return [str(e)]
 
-def main():
-    parser = argparse.ArgumentParser(description="Perform reverse IP lookup on domains using Hacker Target API")
-    parser.add_argument("-ip", required=True, help="IP address to lookup")
-    args = parser.parse_args()
-
-    ip_address = args.ip
+def get_hackertarget_results(ip_address):
     hostnames = reverse_ip_lookup(ip_address)
-
-    for hostname in hostnames:
-        print(hostname)
-
-if __name__ == "__main__":
-    main()
+    return hostnames

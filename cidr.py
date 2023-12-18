@@ -5,10 +5,8 @@ import socket
 import subprocess
 import ssl
 import argparse
-import requests
 from extensions import hackertarget
-from extensions import securitytrails
-import concurrent.futures  # threading to fix slow scanning
+import concurrent.futures
 
 def get_http_status(ip_str):
     try:
