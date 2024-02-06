@@ -7,6 +7,10 @@ import ssl
 import argparse
 from extensions import hackertarget
 import concurrent.futures
+import sys
+import argparse
+import concurrent.futures
+from extensions import header
 
 def get_http_status(ip_str):
     try:
@@ -80,7 +84,7 @@ def check_http_and_ssl(ip_str, port, ssl_check):
     except Exception as e:
         return f"{colored(ip_str, 'blue'):<17} {colored('Error', 'red')}: {str(e)}\n"
 
-def scan_cidr_parallel(cidr, port, ssl_check, use_hackertarget, use_securitytrails):
+def scan_cidr_parallel(cidr, port, ssl_check, use_hackertarget, use_securitytrails, header_check):
     try:
         ip_network = ipaddress.ip_network(cidr)
     except ValueError:
@@ -119,13 +123,14 @@ def main():
     parser.add_argument("-ssl", action="store_true", help="Perform SSL/TLS checks")
     parser.add_argument("-ht", "--hackertarget", action="store_true", help="Use Hacker Target extension")
     parser.add_argument("-st", "--securitytrails", action="store_true", help="Use Security Trails extension")
+    parser.add_argument("-H", "--header", action="store_true", help="Check header information")
 
     args = parser.parse_args()
 
     if args.cidr is None:
         args.cidr = input("Enter the CIDR range (e.g., 192.168.0.0/24): ")
 
-    scan_cidr_parallel(args.cidr, args.port, args.ssl, args.hackertarget, args.securitytrails)
+    scan_cidr_parallel(args.cidr, args.port, args.ssl, args.hackertarget, args.securitytrails, args.header)
 
 if __name__ == "__main__":
     main()
