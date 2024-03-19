@@ -22,7 +22,7 @@ CIDR Probe is a Python script that allows you to scan a CIDR range for open port
     pip install -r requirements.txt
     ```
     ### Option A: Using pip (with virtual environment)
-   ```bash
+```bash
 # Set up a virtual environment:
 python3 -m venv .venv
 
@@ -31,6 +31,7 @@ source .venv/bin/activate
 
 # Install the required dependencies using pip:
 python3 -m pip install -r requirements.txt
+```
 
 ## Usage
 
