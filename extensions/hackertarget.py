@@ -3,7 +3,10 @@ import requests
 def reverse_ip_lookup(ip_address):
     try:
         url = f"http://api.hackertarget.com/reverseiplookup/?q={ip_address}"
+        print(f"Requesting URL: {url}")  # Debugging line
         response = requests.get(url)
+
+        print(f"Response status code: {response.status_code}")  # my code is shit🙂// debug line
 
         if response.status_code == 200:
             hostnames = response.text.splitlines()
