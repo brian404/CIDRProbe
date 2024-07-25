@@ -3,9 +3,11 @@
 CIDR Probe is a Python script that allows you to scan a CIDR range for open ports and retrieve the HTTP status codes of the corresponding services.
 
 ## Installation
-
 0. Run the following command to quickly set up CIDR Probe:
+
+    ```bash
     wget https://raw.githubusercontent.com/brian404/CIDRProbe/main/install.sh && chmod +x install.sh && ./install.sh --venv
+    ```
 
 1. Clone the repository:
 
